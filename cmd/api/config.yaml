@@ -1,0 +1,22 @@
+db:
+  host: rc1a-4o1boxe6vyk50bpb.mdb.yandexcloud.net
+  port: 6432
+  user: user
+  database: tgeasybot
+  certfile: "C:/Users/baldi/.postgresql/root.crt"
+  password: X62-FLL-P2u-xYv
+  deprecate: 1m
+
+tgapi:
+  address: "https://api.telegram.org/"
+  token: 1607353956:AAGbM0Sp4d56fXK6zbBm9o252PRO9ON-gx4
+
+timer:
+  period: 10s
+
+poller:
+  period: 5s
+
+worker:
+  period: 5s
+  workers: 1
