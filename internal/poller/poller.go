@@ -42,7 +42,11 @@ func (p *Poller) do(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, xerrors.Errorf("get state: %w", err)
 	}
-	upds, _, err := p.Client.GetUpdates(ctx, uint64(state.Offset))
+	offset := uint64(state.Offset)
+	if offset != 0 {
+		offset++
+	}
+	upds, _, err := p.Client.GetUpdates(ctx, offset)
 	if err != nil {
 		return 0, xerrors.Errorf("get updates: %w", err)
 	}
@@ -97,7 +101,7 @@ func (p *Poller) run(ctx context.Context, period time.Duration) {
 		case <-ticker.C:
 			if num, err := p.do(ctx); err != nil {
 				logging.S(ctx).Errorf("Error processing updates: %#v", err)
-			} else {
+			} else if num != 0 {
 				logging.S(ctx).Debugf("Updates processed: %d", num)
 			}
 		case <-p.stopper:

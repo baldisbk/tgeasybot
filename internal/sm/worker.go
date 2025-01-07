@@ -10,6 +10,9 @@ import (
 	"github.com/baldisbk/tgeasybot/internal/orm"
 )
 
+type PostponeEvent struct{}
+type DropEvent struct{}
+
 type Worker struct {
 	db     *orm.DB
 	client tgapi.TGClient
@@ -39,6 +42,9 @@ func NewWorkerPool(ctx context.Context, cfg Config, client tgapi.TGClient, db *o
 					events, user, err := worker.db.FetchEvents(ctx)
 					if err != nil {
 						logging.S(ctx).Errorf("error fetching events: %s", err.Error())
+						continue
+					}
+					if len(events) == 0 {
 						continue
 					}
 					if user == nil {
@@ -76,6 +82,10 @@ func NewWorkerPool(ctx context.Context, cfg Config, client tgapi.TGClient, db *o
 							continue
 						case string:
 							user.Contents = e
+						default:
+							// unexpected - probably unprocessed input - ignore
+							logging.S(ctx).Warnf("Unknown event: %#v", out)
+							continue
 						}
 						event.Busy = -1 // drop event, it is processed
 						user.State = sm.State()

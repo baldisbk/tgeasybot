@@ -50,8 +50,7 @@ ON CONFLICT DO NOTHING;`
 	insertUser = `
 INSERT INTO users (id, name, busy, state, contents)
 VALUES ($1, $2, 0, $3, $4)
-ON CONFLICT (id) DO UPDATE
-SET name=$2, state=$3, contents=$4;`
+ON CONFLICT (id) DO UPDATE SET name=$2;`
 	updateState = `INSERT INTO state (id, lastOffset, config) VALUES (0, $1, $2) ON CONFLICT (id) DO UPDATE SET lastOffset=$1, config=$2;`
 
 	// fetch events

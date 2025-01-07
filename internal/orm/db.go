@@ -122,6 +122,9 @@ func (db *DB) GetState(ctx context.Context) (*State, error) {
 
 // Add events fetched from TGAPI
 func (db *DB) RegisterEvents(ctx context.Context, events []Event) (int, error) {
+	if len(events) == 0 {
+		return 0, nil
+	}
 	var num int
 	err := db.tx(ctx, func(ctx context.Context, tx pgx.Tx) error {
 		rows, err := db.pool.Query(ctx, selectState)
@@ -143,7 +146,7 @@ func (db *DB) RegisterEvents(ctx context.Context, events []Event) (int, error) {
 		newOffset := lastOffset
 		num = 0
 		for _, event := range events {
-			if event.ID < lastOffset {
+			if event.ID <= lastOffset {
 				continue
 			}
 			logging.S(ctx).Debugf("Add event %q...", event.Payload)
@@ -152,7 +155,7 @@ func (db *DB) RegisterEvents(ctx context.Context, events []Event) (int, error) {
 			}
 			num++
 			if event.ID > newOffset {
-				newOffset = event.ID + 1
+				newOffset = event.ID
 			}
 			if event.UserName != "" {
 				logging.S(ctx).Debugf("Add user %q...", event.UserName)
@@ -276,7 +279,7 @@ func (db *DB) ProcessEvent(ctx context.Context, user *User, events []*Event) err
 		for _, event := range events {
 			if event.Busy < 0 {
 				logging.S(ctx).Debugf("Drop event %q", event.Payload)
-				if _, err := tx.Exec(ctx, deleteEvent, event.ID, event.UserID); err != nil {
+				if _, err := tx.Exec(ctx, deleteEvent, event.ID, event.TS, event.UserID); err != nil {
 					return xerrors.Errorf("delete event: %w", err)
 				}
 			} else {
