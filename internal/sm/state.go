@@ -27,7 +27,8 @@ type UserTemporaryState struct {
 }
 
 type UserSettings struct {
-	DailyCheckup time.Time `json:"daily_checkup,omitempty"`
+	CheckupOffset time.Duration `json:"checkup_offset,omitempty"`
+	DayBound      time.Duration `json:"day_bound,omitempty"`
 }
 
 type UserState struct {
@@ -45,7 +46,12 @@ func (s *UserState) Marshal() (string, error) {
 }
 
 func StateUnmarshal(from string) (*UserState, error) {
-	var s UserState
+	s := UserState{
+		UserSettings: UserSettings{
+			CheckupOffset: checkoutDuration,
+			DayBound:      dayBound,
+		},
+	}
 	if from == "" {
 		return &s, nil
 	}

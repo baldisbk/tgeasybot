@@ -39,26 +39,31 @@ var (
 			{Text: "No", CallbackData: noButton},
 		},
 	}}
+	yesNoBackMenu = tgapi.InlineKeyboard{InlineKeyboard: [][]tgapi.InlineKeyboardButton{
+		{
+			{Text: "Yes", CallbackData: yesButton},
+			{Text: "No", CallbackData: noButton},
+		},
+		{{Text: "Back", CallbackData: backButton}},
+	}}
 )
 
-func listMenu(from, to int) tgapi.InlineKeyboard {
+func listMenu(from, size int) tgapi.InlineKeyboard {
 	line := []tgapi.InlineKeyboardButton{}
 	if from > 0 {
 		line = append(line, tgapi.InlineKeyboardButton{Text: "<", CallbackData: prevButton})
 	}
-	for i := from; i <= to && i-from < len(numButtons); i++ {
+	for i := from; i < size && i-from < len(numButtons); i++ {
 		line = append(line, tgapi.InlineKeyboardButton{
-			Text:         strconv.FormatInt(int64(i), 10),
+			Text:         strconv.FormatInt(int64(i+1), 10),
 			CallbackData: numButtons[i-from],
 		})
 	}
-	if to-from <= len(numButtons) {
+	if size-from > len(numButtons) {
 		line = append(line, tgapi.InlineKeyboardButton{Text: ">", CallbackData: nextButton})
 	}
 	return tgapi.InlineKeyboard{InlineKeyboard: [][]tgapi.InlineKeyboardButton{
 		line,
-		{
-			{Text: "Back", CallbackData: backButton},
-		},
+		{{Text: "Back", CallbackData: backButton}},
 	}}
 }

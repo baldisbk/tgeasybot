@@ -73,7 +73,7 @@ func (d *Doer) Cb(ff ...func(context.Context, *CallbackQuery) error) statemachin
 	}
 }
 
-func (d *Doer) T(ff ...func(context.Context, *Timer) error) statemachine.SMCallback {
+func (d *Doer) Tim(ff ...func(context.Context, *Timer) error) statemachine.SMCallback {
 	return func(ctx context.Context, i interface{}) (interface{}, error) {
 		t, ok := i.(*Timer)
 		if !ok {
@@ -86,4 +86,10 @@ func (d *Doer) T(ff ...func(context.Context, *Timer) error) statemachine.SMCallb
 		}
 		return d.dbState()
 	}
+}
+
+func (d *Doer) T(cbs ...statemachine.SMCallback) statemachine.SMCallback {
+	return statemachine.CompositeCallback(
+		append(cbs, d.SetTimeout)...,
+	)
 }

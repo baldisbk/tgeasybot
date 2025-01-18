@@ -1,5 +1,7 @@
 package sm
 
+import "time"
+
 const (
 	noState          = ""
 	menuState        = "menu"
@@ -59,4 +61,10 @@ func buttonNum(button string) int {
 const (
 	timeoutTimer int64 = iota
 	checkoutTimer
+)
+
+const (
+	timeoutDuration  = 30 * time.Second
+	checkoutDuration = 22 * time.Hour
+	dayBound         = 28 * time.Hour
 )
