@@ -3,8 +3,7 @@ db:
   port: 6432
   user: user
   database: tgeasybot
-  certfile: "C:/Users/baldi/.postgresql/root.crt"
-  password: X62-FLL-P2u-xYv
+  certfile: "root.crt"
   deprecate: 1m
 
 tgapi:
