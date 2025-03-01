@@ -23,3 +23,21 @@ go.work.sum
 
 # env file
 .env
+
+# tf
+tf/service/.terraform
+tf/service/.terraform.lock.hcl
+tf/service/terraform.tfstate
+tf/service/terraform.tfstate.backup
+tf/service/service.tfplan
+tf/devel/.terraform
+tf/devel/.terraform.lock.hcl
+tf/devel/terraform.tfstate
+tf/devel/terraform.tfstate.backup
+tf/devel/devel.tfplan
+
+# VSCode
+.vscode
+
+# secrets
+tgbot.token
