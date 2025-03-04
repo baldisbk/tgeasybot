@@ -1,12 +1,16 @@
 # initial
 
 data "yandex_resourcemanager_folder" "folder" {
-    id = var.folder_id
+    folder_id = var.folder_id
 }
 
-data "yandex_lockbox_secret" "tgbot-token" {
+data "yandex_lockbox_secret" "tgbot_token_secret" {
     name      = "tgbot-token"
     folder_id = var.folder_id
+}
+
+data "yandex_lockbox_secret_version" "tgbot_token" {
+    secret_id = data.yandex_lockbox_secret.tgbot_token_secret.id
 }
 
 # net & subnet
@@ -42,17 +46,45 @@ resource "yandex_resourcemanager_folder_iam_member" "tgbot_sa_role_logging" {
     member    = "serviceAccount:${yandex_iam_service_account.tgbot_sa.id}"
 }
 
-# databases?
+# db password
+
+resource "yandex_lockbox_secret" "db_password_secret" {
+   name      = "tgbot-db-password"
+   folder_id = var.folder_id
+}
+resource "yandex_lockbox_secret_version" "db_password" {
+  secret_id = yandex_lockbox_secret.db_password_secret.id
+  entries {
+    key = "password"
+    command {
+      path = "openssl"
+      args = ["rand", "-base64", "24"]
+    }
+  } 
+}
+
+# databases
+
+
+
 # registry
 
-data "yandex_container_registry" "registry" {
-  name      = var.registry_id
+resource "yandex_container_registry" "registry" {
+  name      = "tgbot"
   folder_id = var.folder_id
 }
 
-data "external" "docker-build" {
+data "external" "docker_build" {
 	program = ["bash", "${path.module}/build.sh"]
 	working_dir = "${path.module}"
+  query = {
+    tg_token_id    = data.yandex_lockbox_secret.tgbot_token_secret.id
+    db_password_id = yandex_lockbox_secret.db_password_secret.id
+    registry_id    = yandex_container_registry.registry.id
+
+    tg_token_version_id    = data.yandex_lockbox_secret_version.tgbot_token.id
+    db_password_version_id = yandex_lockbox_secret_version.db_password.id
+  }
 }
 
 # logging
@@ -66,6 +98,14 @@ resource "yandex_logging_group" "logging" {
 
 data "yandex_compute_image" "image" {
   family = "container-optimized-image"
+}
+
+resource "yandex_compute_disk" "db_disk" {
+  name      = "tgbot-db-disk"
+  type      = "network-ssd"
+  zone      = var.zone_id
+  folder_id = data.yandex_resourcemanager_folder.folder.id
+  size      = 10
 }
 
 resource "yandex_compute_instance_group" "ig" {
@@ -91,6 +131,9 @@ resource "yandex_compute_instance_group" "ig" {
         size     = 20
       }
     }
+    secondary_disk {
+      disk_id = yandex_compute_disk.db_disk.id
+    }
 
     network_interface {
       network_id = yandex_vpc_network.network.id
@@ -100,25 +143,20 @@ resource "yandex_compute_instance_group" "ig" {
 
     metadata = {
       user-data = templatefile("config.yaml", {
-        VM_USER  = var.vm_user
-        SSH_KEY  = var.ssh_key
+        USER_NAME = var.vm_user
+        USER_SSH_KEY = var.ssh_key
         LOG_GROUP_ID = yandex_logging_group.logging.id
       })
       docker-container-declaration = templatefile("containers.yaml", {
-        DOCKER_IMAGE = data.external.docker-build.result
+        DOCKER_IMAGE = data.external.docker_build.result.image
         LOG_GROUP_ID = yandex_logging_group.logging.id
       })
     }
   }
 
   scale_policy {
-    auto_scale {
-      initial_size           = 1
-      measurement_duration   = 60
-      cpu_utilization_target = 40
-      min_zone_size          = 1
-      max_size               = 6
-      warmup_duration        = 120
+    fixed_scale {
+      size = 1
     }
   }
 

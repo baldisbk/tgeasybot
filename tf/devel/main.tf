@@ -53,7 +53,7 @@ resource "yandex_iam_service_account" "tf-deployer" {
 }
 resource "yandex_resourcemanager_folder_iam_member" "admin" {
     folder_id = yandex_resourcemanager_folder.deploy-folder.id
-    role      = "editor"
+    role      = "admin"
     member    = "serviceAccount:${yandex_iam_service_account.tf-deployer.id}"
 }
 

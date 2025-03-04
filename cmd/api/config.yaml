@@ -1,5 +1,4 @@
 db:
-  host: rc1b-ckz7d7c7r9ep1fv3.mdb.yandexcloud.net
   port: 6432
   user: user
   database: tgeasybot

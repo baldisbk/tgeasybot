@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM golang AS builder
 
 # pre-copy/cache go.mod for pre-downloading dependencies
