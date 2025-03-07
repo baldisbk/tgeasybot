@@ -23,27 +23,33 @@ type DB struct {
 }
 
 func NewDB(ctx context.Context, cfg Config) (*DB, error) {
-	rootCertPool := x509.NewCertPool()
-	pem, err := os.ReadFile(cfg.CertFile)
-	if err != nil {
-		return nil, xerrors.Errorf("error loading %s: %w", cfg.CertFile, err)
-	}
-	if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
-		return nil, xerrors.Errorf("failed to append PEM")
-	}
-
 	connstring := fmt.Sprintf(
-		"host=%s port=%d dbname=%s user=%s password=%s sslmode=verify-full target_session_attrs=read-write",
+		"host=%s port=%d dbname=%s user=%s password=%s target_session_attrs=read-write",
 		cfg.Host, cfg.Port, cfg.Database, cfg.User, cfg.Password)
+	if cfg.TLS {
+		connstring += " sslmode=verify-full"
+	}
 
 	poolCfg, err := pgxpool.ParseConfig(connstring)
 	if err != nil {
 		return nil, xerrors.Errorf("parse cfg: %w", err)
 	}
 
-	poolCfg.ConnConfig.TLSConfig = &tls.Config{
-		RootCAs:            rootCertPool,
-		InsecureSkipVerify: true,
+	if cfg.TLS {
+		rootCertPool := x509.NewCertPool()
+		if cfg.CertFile != "" {
+			pem, err := os.ReadFile(cfg.CertFile)
+			if err != nil {
+				return nil, xerrors.Errorf("error loading %s: %w", cfg.CertFile, err)
+			}
+			if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+				return nil, xerrors.Errorf("failed to append PEM")
+			}
+		}
+		poolCfg.ConnConfig.TLSConfig = &tls.Config{
+			RootCAs:            rootCertPool,
+			InsecureSkipVerify: true,
+		}
 	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)

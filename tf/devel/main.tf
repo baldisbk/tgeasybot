@@ -125,7 +125,7 @@ resource "yandex_vpc_network" "devel-network" {
 resource "yandex_vpc_subnet" "subnet" {
     name           = "subnet-${var.zone_id}"
     zone           = var.zone_id
-    folder_id = yandex_resourcemanager_folder.deploy-folder.id
+    folder_id      = yandex_resourcemanager_folder.deploy-folder.id
     v4_cidr_blocks = ["192.168.10.0/24"]
     network_id     = "${yandex_vpc_network.devel-network.id}"
 }

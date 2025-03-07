@@ -9,6 +9,7 @@ type Config struct {
 	Password string `yaml:"password" env:"TGBOT_DB_PASSWORD"`
 	Database string `yaml:"database" env:"TGBOT_DB_DATABASE"`
 	CertFile string `yaml:"certfile" env:"TGBOT_DB_CERTFILE"`
+	TLS      bool   `yaml:"tls"`
 
 	Deprecate time.Duration `yaml:"deprecate"`
 }

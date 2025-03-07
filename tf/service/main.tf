@@ -1,28 +1,29 @@
 # initial
 
 data "yandex_resourcemanager_folder" "folder" {
-    folder_id = var.folder_id
+  folder_id = var.folder_id
 }
 
 data "yandex_lockbox_secret" "tgbot_token_secret" {
-    name      = "tgbot-token"
-    folder_id = var.folder_id
+  name      = "tgbot-token"
+  folder_id = var.folder_id
 }
 
 data "yandex_lockbox_secret_version" "tgbot_token" {
-    secret_id = data.yandex_lockbox_secret.tgbot_token_secret.id
+  secret_id = data.yandex_lockbox_secret.tgbot_token_secret.id
 }
 
 # net & subnet
 
 resource "yandex_vpc_network" "network" {
-    name      = "tgbot"
-    folder_id = var.folder_id
+  name      = "tgbot"
+  folder_id = var.folder_id
 }
 
 resource "yandex_vpc_subnet" "subnet" {
-  name           = "subnet-${var.zone_id}"
+  name           = "tgbot-subnet"
   zone           = var.zone_id
+  folder_id      = var.folder_id
   v4_cidr_blocks = ["192.168.1.0/24"]
   network_id     = yandex_vpc_network.network.id
 }
@@ -30,28 +31,29 @@ resource "yandex_vpc_subnet" "subnet" {
 # service accounts
 
 resource "yandex_iam_service_account" "tgbot_sa" {
-    folder_id = var.folder_id
-    name      = "tgbot_sa"
+  folder_id = var.folder_id
+  name      = "tgbot-sa"
 }
 
 resource "yandex_resourcemanager_folder_iam_member" "tgbot_sa_role_docker" {
-    folder_id = var.folder_id
-    role      = "container-registry.images.puller"
-    member    = "serviceAccount:${yandex_iam_service_account.tgbot_sa.id}"
+  folder_id = var.folder_id
+  role      = "container-registry.images.puller"
+  member    = "serviceAccount:${yandex_iam_service_account.tgbot_sa.id}"
 }
 
 resource "yandex_resourcemanager_folder_iam_member" "tgbot_sa_role_logging" {
-    folder_id = var.folder_id
-    role      = "logging.writer"
-    member    = "serviceAccount:${yandex_iam_service_account.tgbot_sa.id}"
+  folder_id = var.folder_id
+  role      = "logging.writer"
+  member    = "serviceAccount:${yandex_iam_service_account.tgbot_sa.id}"
 }
 
 # db password
 
 resource "yandex_lockbox_secret" "db_password_secret" {
-   name      = "tgbot-db-password"
-   folder_id = var.folder_id
+  name      = "tgbot-db-password"
+  folder_id = var.folder_id
 }
+
 resource "yandex_lockbox_secret_version" "db_password" {
   secret_id = yandex_lockbox_secret.db_password_secret.id
   entries {
@@ -62,10 +64,6 @@ resource "yandex_lockbox_secret_version" "db_password" {
     }
   } 
 }
-
-# databases
-
-
 
 # registry
 
@@ -150,6 +148,7 @@ resource "yandex_compute_instance_group" "ig" {
       docker-container-declaration = templatefile("containers.yaml", {
         DOCKER_IMAGE = data.external.docker_build.result.image
         LOG_GROUP_ID = yandex_logging_group.logging.id
+        DB_PASSWORD  = [ for e in yandex_lockbox_secret_version.db_password.entries : e.value if e.key == "password" ]
       })
     }
   }

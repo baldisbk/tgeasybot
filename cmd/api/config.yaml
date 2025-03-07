@@ -1,5 +1,6 @@
 db:
-  port: 6432
+  host: postgresql
+  port: 5432
   user: user
   database: tgeasybot
   certfile: "root.crt"
@@ -17,3 +18,4 @@ poller:
 worker:
   period: 1s
   workers: 1
+  
