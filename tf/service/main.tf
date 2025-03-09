@@ -52,9 +52,15 @@ resource "yandex_iam_service_account" "tgbot_deploy_sa" {
   name      = "tgbot-deploy-sa"
 }
 
-resource "yandex_resourcemanager_folder_iam_member" "tgbot_deploy_sa_role_docker" {
+resource "yandex_resourcemanager_folder_iam_member" "tgbot_deploy_sa_role_editor" {   
   folder_id = var.folder_id
-  role      = "compute.editor"
+  role      = "editor"
+  member    = "serviceAccount:${yandex_iam_service_account.tgbot_deploy_sa.id}"
+}
+
+resource "yandex_resourcemanager_folder_iam_member" "tgbot_deploy_sa_role_vpc_user" {
+  folder_id = var.folder_id
+  role      = "vpc.user"
   member    = "serviceAccount:${yandex_iam_service_account.tgbot_deploy_sa.id}"
 }
 
@@ -89,8 +95,8 @@ resource "yandex_container_registry" "registry" {
 }
 
 data "external" "docker_build" {
-	program = ["bash", "${path.module}/build.sh"]
-	working_dir = "${path.module}"
+  program = ["bash", "${path.module}/build.sh"]
+  working_dir = "${path.module}"
   query = {
     tg_token_id    = data.yandex_lockbox_secret.tgbot_token_secret.id
     db_password_id = yandex_lockbox_secret.db_password_secret.id
@@ -116,7 +122,6 @@ data "yandex_compute_image" "image" {
 
 resource "yandex_compute_disk" "db_disk" {
   name      = "tgbot-db-disk"
-  type      = "network-ssd"
   zone      = var.zone_id
   folder_id = data.yandex_resourcemanager_folder.folder.id
   size      = 10
@@ -162,7 +167,7 @@ resource "yandex_compute_instance_group" "ig" {
         USER_SSH_KEY = var.ssh_key
         LOG_GROUP_ID = yandex_logging_group.logging.id
       })
-      docker-container-declaration = templatefile("containers.yaml", {
+      docker-compose = templatefile("containers.yaml", {
         DOCKER_IMAGE = data.external.docker_build.result.image
         LOG_GROUP_ID = yandex_logging_group.logging.id
         DB_PASSWORD  = trimspace([ for e in data.yandex_lockbox_secret_version.db_password.entries : e.text_value if e.key == "password" ][0])
