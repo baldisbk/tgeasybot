@@ -47,6 +47,17 @@ resource "yandex_resourcemanager_folder_iam_member" "tgbot_sa_role_logging" {
   member    = "serviceAccount:${yandex_iam_service_account.tgbot_sa.id}"
 }
 
+resource "yandex_iam_service_account" "tgbot_deploy_sa" {
+  folder_id = var.folder_id
+  name      = "tgbot-deploy-sa"
+}
+
+resource "yandex_resourcemanager_folder_iam_member" "tgbot_deploy_sa_role_docker" {
+  folder_id = var.folder_id
+  role      = "compute.editor"
+  member    = "serviceAccount:${yandex_iam_service_account.tgbot_deploy_sa.id}"
+}
+
 # db password
 
 resource "yandex_lockbox_secret" "db_password_secret" {
@@ -114,7 +125,7 @@ resource "yandex_compute_disk" "db_disk" {
 resource "yandex_compute_instance_group" "ig" {
   name                = "tgbot"
   folder_id           = var.folder_id
-  service_account_id  = yandex_iam_service_account.tgbot_sa.id
+  service_account_id  = yandex_iam_service_account.tgbot_deploy_sa.id
   instance_template {
     platform_id = "standard-v3"
     resources {
@@ -157,6 +168,7 @@ resource "yandex_compute_instance_group" "ig" {
         DB_PASSWORD  = trimspace([ for e in data.yandex_lockbox_secret_version.db_password.entries : e.text_value if e.key == "password" ][0])
       })
     }
+    service_account_id  = yandex_iam_service_account.tgbot_sa.id
   }
 
   scale_policy {
