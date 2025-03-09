@@ -65,6 +65,11 @@ resource "yandex_lockbox_secret_version" "db_password" {
   } 
 }
 
+data "yandex_lockbox_secret_version" "db_password" {
+  secret_id  = yandex_lockbox_secret.db_password_secret.id
+  version_id = yandex_lockbox_secret_version.db_password.id
+}
+
 # registry
 
 resource "yandex_container_registry" "registry" {
@@ -130,7 +135,8 @@ resource "yandex_compute_instance_group" "ig" {
       }
     }
     secondary_disk {
-      disk_id = yandex_compute_disk.db_disk.id
+      disk_id     = yandex_compute_disk.db_disk.id
+      device_name = "dbdata"
     }
 
     network_interface {
@@ -148,7 +154,7 @@ resource "yandex_compute_instance_group" "ig" {
       docker-container-declaration = templatefile("containers.yaml", {
         DOCKER_IMAGE = data.external.docker_build.result.image
         LOG_GROUP_ID = yandex_logging_group.logging.id
-        DB_PASSWORD  = [ for e in yandex_lockbox_secret_version.db_password.entries : e.value if e.key == "password" ]
+        DB_PASSWORD  = trimspace([ for e in data.yandex_lockbox_secret_version.db_password.entries : e.text_value if e.key == "password" ][0])
       })
     }
   }
