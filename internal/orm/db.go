@@ -61,6 +61,13 @@ func NewDB(ctx context.Context, cfg Config) (*DB, error) {
 	if db.deprecate == 0 {
 		db.deprecate = defaultDeprecate
 	}
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	if _, err := pool.Query(timeoutCtx, "SELECT 1"); err != nil {
+		return nil, xerrors.Errorf("test connection: %w", err)
+	}
+
 	if err := db.prepare(ctx); err != nil {
 		return nil, xerrors.Errorf("prepare: %w", err)
 	}

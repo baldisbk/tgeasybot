@@ -33,6 +33,7 @@ resource "yandex_vpc_subnet" "subnet" {
 resource "yandex_iam_service_account" "tgbot_sa" {
   folder_id = var.folder_id
   name      = "tgbot-sa"
+  description = "SA for tgbot service"
 }
 
 resource "yandex_resourcemanager_folder_iam_member" "tgbot_sa_role_docker" {
@@ -48,8 +49,9 @@ resource "yandex_resourcemanager_folder_iam_member" "tgbot_sa_role_logging" {
 }
 
 resource "yandex_iam_service_account" "tgbot_deploy_sa" {
-  folder_id = var.folder_id
-  name      = "tgbot-deploy-sa"
+  folder_id   = var.folder_id
+  name        = "tgbot-deploy-sa"
+  description = "SA for tgbot instance group"
 }
 
 resource "yandex_resourcemanager_folder_iam_member" "tgbot_deploy_sa_role_editor" {   
