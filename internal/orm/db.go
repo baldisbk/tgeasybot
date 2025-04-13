@@ -52,6 +52,8 @@ func NewDB(ctx context.Context, cfg Config) (*DB, error) {
 		}
 	}
 
+	// poolCfg.ConnConfig.ConnectTimeout
+
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return nil, xerrors.Errorf("open: %w", err)
@@ -62,15 +64,30 @@ func NewDB(ctx context.Context, cfg Config) (*DB, error) {
 		db.deprecate = defaultDeprecate
 	}
 
+	logging.S(ctx).Debugf("Waiting database...")
+	now := time.Now()
+
 	timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	if _, err := pool.Query(timeoutCtx, "SELECT 1"); err != nil {
-		return nil, xerrors.Errorf("test connection: %w", err)
+	pause := time.Second
+	var done bool
+	for !done {
+		timer := time.NewTimer(pause)
+		pause = pause * 2
+		select {
+		case <-timeoutCtx.Done():
+			logging.S(ctx).Debugf("Waiting timeout!")
+			timer.Stop()
+			return nil, xerrors.Errorf("ping timeout")
+		case <-timer.C:
+			if err := pool.Ping(timeoutCtx); err == nil {
+				done = true
+			} else {
+				logging.S(ctx).Debugf("%s elapsed...", time.Since(now).String())
+			}
+		}
 	}
 
-	if err := db.prepare(ctx); err != nil {
-		return nil, xerrors.Errorf("prepare: %w", err)
-	}
 	return &db, nil
 }
 

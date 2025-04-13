@@ -387,5 +387,11 @@ func MakeStateMachine(doer *Doer) statemachine.Machine {
 		doer.TransitionTimeout(statShowState),
 		SkipMessage(statShowState),
 		SkipCallback(statShowState),
+		// settings scenario
+		// TODO
+		doer.TransitionStart(settingState),
+		doer.TransitionTimeout(settingState),
+		SkipMessage(settingState),
+		SkipCallback(settingState),
 	}, true)
 }
