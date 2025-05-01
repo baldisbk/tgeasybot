@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 export FOLDER_ID=${FOLDER_ID:-$(curl -H metadata-flavor:Google 169.254.169.254/computeMetadata/v1/yandex/folder-id)}
 export YC_TOKEN=$(yc iam create-token)
 export ACCESS_KEY=$(yc lockbox payload get --name tfstate-key --key access)

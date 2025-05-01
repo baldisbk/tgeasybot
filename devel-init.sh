@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 export YC_TOKEN=$(yc iam create-token)
 export TGBOT_TG_TOKEN=${TGBOT_TG_TOKEN:-$(cat tgbot.token)}
 export SSH_PUBLIC_KEY=${SSH_PUBLIC_KEY:-$(cat $HOME/.ssh/id_ed25519.pub)}
